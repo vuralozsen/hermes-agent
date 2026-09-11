@@ -1652,6 +1652,11 @@ class _CodexCompletionsAdapter:
         timeout = kwargs.get("timeout")
         if timeout is not None:
             resp_kwargs["timeout"] = timeout
+        # Per-request HTTP headers (OpenCode session affinity, Copilot
+        # x-initiator) map to real headers via the SDK kwarg — forward them.
+        # Ported from upstream PR #101864.
+        if isinstance(kwargs.get("extra_headers"), dict) and kwargs["extra_headers"]:
+            resp_kwargs["extra_headers"] = dict(kwargs["extra_headers"])
 
         # Note: the Codex endpoint (chatgpt.com/backend-api/codex) does NOT
         # support max_output_tokens or temperature — omit to avoid 400 errors.
@@ -2396,6 +2401,14 @@ class _AnthropicCompletionsAdapter:
             from agent.anthropic_adapter import _forbids_sampling_params
             if not _forbids_sampling_params(model):
                 anthropic_kwargs["temperature"] = temperature
+        # Per-request HTTP headers (OpenCode session affinity) — the Anthropic
+        # SDK accepts ``extra_headers`` on messages.create/stream too.
+        # Ported from upstream PR #101864.
+        if isinstance(kwargs.get("extra_headers"), dict) and kwargs["extra_headers"]:
+            anthropic_kwargs["extra_headers"] = {
+                **(anthropic_kwargs.get("extra_headers") or {}),
+                **kwargs["extra_headers"],
+            }
 
         # Pass through caller-supplied extra_body so providers behind
         # Anthropic-compatible gateways receive their per-vendor request
