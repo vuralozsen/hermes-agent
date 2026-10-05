@@ -33,6 +33,9 @@ services:
     container_name: hermes
     restart: unless-stopped
     network_mode: host
+    cpus: "1.0"
+    mem_limit: 2560m
+    mem_reservation: 512m
     volumes:
       - ~/.hermes:/opt/data
     environment:
